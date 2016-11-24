@@ -9,41 +9,87 @@
  *   lastTimeUpdated: Int (Date.now())
  * }
  *
- * The reason we use lists is because we might expand it to more dimensions
  */
 
-const MAX_COORD = [960, 600];
 const OPACITY = 0.7;
 const MAX = 0.01;
-const OBJECTS = 100;
-const MAX_DIST = getDistance([MAX_COORD[0]/4, MAX_COORD[1]/4]);
+var MAX_DIST;
+var MAX_COORD;
+var OBJECTS;
+var G;
+var SLOW_DOWN;
+var canvas;
+var context;
 
-let canvas = document.getElementById("canvas");
-let context = canvas.getContext("2d");
+var requestAnimationFrame = window.requestAnimationFrame ||
+window.mozRequestAnimationFrame ||
+window.webkitRequestAnimationFrame ||
+window.msRequestAnimationFrame;
 
-let requestAnimationFrame = window.requestAnimationFrame ||
-                            window.mozRequestAnimationFrame ||
-                            window.webkitRequestAnimationFrame ||
-                            window.msRequestAnimationFrame;
+var cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
 
-let objects = generateObjects(OBJECTS);
-let forces = [[]];
+var requestId;
 
-draw(objects);
+init();
+
+/**
+ * Init the animation
+ * @param  {Array} size                   [Array with max x and y values]
+ * @param  {Int} amountOfObjects          [Amount of initial nodes ()]
+ * @param  {Double} g                     [Describes how strong the gravity is]
+ * @param  {Double} slowDown              [If the animation is too fact, slow it down by this factor]
+ * @param  {Bool} resize                  [If true, the canvas resizes if the window is resised]
+ */
+function init(size = [window.innerWidth - 20, window.innerHeight * 0.8], amountOfObjects = 100,
+  g = 0.2, slowDown = 25.0, resize = true) {
+  canvas = document.getElementById("canvas");
+  context = canvas.getContext("2d");
+
+  MAX_COORD = size;
+  OBJECTS = amountOfObjects;
+  G = g;
+  SLOW_DOWN = slowDown;
+  MAX_DIST = getDistance([MAX_COORD[0]/6, MAX_COORD[1]/6]);
+
+  setCanvasSize(canvas);
+  let objects = generateObjects(amountOfObjects);
+
+  if(resize) {
+    window.onresize = () => {
+      window.cancelAnimationFrame(requestId);
+      MAX_COORD = [window.innerWidth - 20, window.innerHeight * 0.8];
+      setCanvasSize(canvas);
+      let objects = generateObjects(amountOfObjects);
+      draw(objects);
+    };
+  }
+
+  draw(objects);
+}
+
+function setCanvasSize(canvas) {
+  canvas.setAttribute("width", MAX_COORD[0]);
+  canvas.setAttribute("height", MAX_COORD[1]);
+}
+
 
 function draw(objects) {
   context.clearRect(0, 0, MAX_COORD[0], MAX_COORD[1]);
-  forces = updateObjects(objects);
+  let forces = updateObjects(objects);
   drawCircles(objects);
   drawLines(objects, forces);
-  requestAnimationFrame(() => draw(objects));
+  requestId = requestAnimationFrame(() => draw(objects));
 }
 
 function drawCircles(objects) {
   objects.forEach((object) => {
     context.beginPath();
     context.arc(object.coord[0], object.coord[1], object.radius, 0, 2 * Math.PI, false);
-    context.fillStyle = "rgba(255, 255, 255," + OPACITY + ")";
+    if(object.mass > 20.0) {
+      context.fillStyle = "rgb(255, 255, 255)";
+    } else {
+      context.fillStyle = "rgba(255, 255, 255," + OPACITY + ")";
+    }
     context.fill();
     context.lineWidth = 0;
   });
@@ -51,7 +97,7 @@ function drawCircles(objects) {
 
 // TODO: Need to figure out how to draw this
 function drawLines(objects, forces) {
-  getMagnitudeForce(forces);
+  getMagnitudeForce(objects, forces);
   for(let i = 0; i < objects.length; i++) {
     for(let j = 0; j < objects.length; j++) {
       if(i >= j || distanceTooGreat(objects[i], objects[j])) { continue; }
@@ -75,7 +121,7 @@ function distanceTooGreat(obj1, obj2) {
   return distance > MAX_DIST;
 }
 
-function getMagnitudeForce(forces) {
+function getMagnitudeForce(objects, forces) {
   for(let i = 0; i < objects.length; i++) {
     for(let j = 0; j < objects.length; j++) {
       if(i > j) { continue; }

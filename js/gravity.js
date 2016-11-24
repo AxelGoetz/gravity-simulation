@@ -1,6 +1,3 @@
-const G = 0.2;  // Can be anything but this avoids working with tiny numbers
-const SLOW_DOWN = 25.0;
-
 /**
  * Updates every object according to all of the forces
  * acting upon them
