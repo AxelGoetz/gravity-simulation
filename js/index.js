@@ -73,7 +73,6 @@ function setCanvasSize(canvas) {
   canvas.setAttribute("height", MAX_COORD[1]);
 }
 
-
 function draw(objects) {
   if(objects.length < 20) {
     cancelAnimationFrame(requestId);
