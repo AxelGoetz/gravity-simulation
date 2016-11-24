@@ -13,6 +13,7 @@
 
 const OPACITY = 0.7;
 const MAX = 0.01;
+const TOLERANCE = 10;
 var MAX_DIST;
 var MAX_COORD;
 var OBJECTS;
@@ -40,9 +41,9 @@ init();
  * @param  {Double} slowDown              [If the animation is too fact, slow it down by this factor]
  * @param  {Bool} resize                  [If true, the canvas resizes if the window is resised]
  */
-function init(size = [window.innerWidth - 20, window.innerHeight * 0.8], amountOfObjects = 100,
+function init(id = "canvas", size = [window.innerWidth - 20, window.innerHeight * 0.8], amountOfObjects = 100,
   g = 0.2, slowDown = 25.0, resize = true) {
-  canvas = document.getElementById("canvas");
+  canvas = document.getElementById(id);
   context = canvas.getContext("2d");
 
   MAX_COORD = size;
@@ -56,10 +57,10 @@ function init(size = [window.innerWidth - 20, window.innerHeight * 0.8], amountO
 
   if(resize) {
     window.onresize = () => {
-      window.cancelAnimationFrame(requestId);
+      cancelAnimationFrame(requestId);
       MAX_COORD = [window.innerWidth - 20, window.innerHeight * 0.8];
       setCanvasSize(canvas);
-      let objects = generateObjects(amountOfObjects);
+      let objects = generateObjects(OBJECTS);
       draw(objects);
     };
   }
@@ -74,8 +75,15 @@ function setCanvasSize(canvas) {
 
 
 function draw(objects) {
+  if(objects.length < 20) {
+    cancelAnimationFrame(requestId);
+    let objects = generateObjects(OBJECTS);
+    draw(objects);
+    return;
+  }
   context.clearRect(0, 0, MAX_COORD[0], MAX_COORD[1]);
   let forces = updateObjects(objects);
+  checkForOutOfBounds(objects);
   drawCircles(objects);
   drawLines(objects, forces);
   requestId = requestAnimationFrame(() => draw(objects));
@@ -95,7 +103,6 @@ function drawCircles(objects) {
   });
 }
 
-// TODO: Need to figure out how to draw this
 function drawLines(objects, forces) {
   getMagnitudeForce(objects, forces);
   for(let i = 0; i < objects.length; i++) {
@@ -111,6 +118,16 @@ function drawLines(objects, forces) {
       context.moveTo(objects[i].coord[0], objects[i].coord[1]);
       context.lineTo(objects[j].coord[0], objects[j].coord[1]);
       context.stroke();
+    }
+  }
+}
+
+function checkForOutOfBounds(objects) {
+  for(let i = 0; i < objects.length; i++) {
+    if(objects[i].coord[0] < -TOLERANCE || objects[i].coord[0] > MAX_COORD[0] + TOLERANCE ||
+        objects[i].coord[1] < -TOLERANCE || objects[i].coord[1] > MAX_COORD[1] + TOLERANCE) {
+      objects.splice(i, 1);
+      i--;
     }
   }
 }
