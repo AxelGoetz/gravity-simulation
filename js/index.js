@@ -23,15 +23,15 @@ var canvas;
 var context;
 
 var requestAnimationFrame = window.requestAnimationFrame ||
-window.mozRequestAnimationFrame ||
-window.webkitRequestAnimationFrame ||
-window.msRequestAnimationFrame;
+                            window.mozRequestAnimationFrame ||
+                            window.webkitRequestAnimationFrame ||
+                            window.msRequestAnimationFrame;
 
 var cancelAnimationFrame = window.cancelAnimationFrame || window.mozCancelAnimationFrame;
 
 var requestId;
 
-init();
+startSimulation();
 
 /**
  * Init the animation
@@ -39,10 +39,9 @@ init();
  * @param  {Int} amountOfObjects          [Amount of initial nodes ()]
  * @param  {Double} g                     [Describes how strong the gravity is]
  * @param  {Double} slowDown              [If the animation is too fact, slow it down by this factor]
- * @param  {Bool} resize                  [If true, the canvas resizes if the window is resised]
  */
-function init(id = "canvas", size = [window.innerWidth - 20, window.innerHeight * 0.8], amountOfObjects = 100,
-  g = 0.2, slowDown = 25.0, resize = true) {
+function startSimulation(id = "canvas", size = [window.innerWidth - 20, window.innerHeight * 0.8], amountOfObjects = 100,
+  g = 0.2, slowDown = 25.0) {
   canvas = document.getElementById(id);
   context = canvas.getContext("2d");
 
@@ -55,17 +54,11 @@ function init(id = "canvas", size = [window.innerWidth - 20, window.innerHeight 
   setCanvasSize(canvas);
   let objects = generateObjects(amountOfObjects);
 
-  if(resize) {
-    window.onresize = () => {
-      cancelAnimationFrame(requestId);
-      MAX_COORD = [window.innerWidth - 20, window.innerHeight * 0.8];
-      setCanvasSize(canvas);
-      let objects = generateObjects(OBJECTS);
-      draw(objects);
-    };
-  }
-
   draw(objects);
+}
+
+function stopSimulation() {
+  cancelAnimationFrame(requestId);
 }
 
 function setCanvasSize(canvas) {
